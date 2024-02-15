@@ -34,10 +34,10 @@ class Bll: # define Bll class
     @staticmethod # static method
     def openAI_image(content): # method to generate image
         completion = client.images.generate( # generate image
-            model="dall-e-2",
+            model="dall-e-3",
             prompt=content,
             n=1,
-            size="512x512",
+            size="1024x1024",
         )
         try:
             reply = completion.data[0].url # get image URL
