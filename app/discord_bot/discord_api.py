@@ -1,42 +1,48 @@
-from dotenv import load_dotenv
 import discord
-import openai
-import requests
+from openai import OpenAI
 import os
-from app.chatgpt_ai.openai import chatgpt_response
+from dotenv import load_dotenv
+from discord.ext import tasks
+from app.openai_api.openai_api import Bll
 
 load_dotenv()
+discord_token = os.getenv('DISCORD_TOKEN')
 
-discord_token = os.getenv("DISCORD_TOKEN")
+intents = discord.Intents.default()
+intents.message_content = True
 
-class MyClient(discord.Client): # MyClient is a sub class of discord.client
-    async def on_ready(self):
-        print("Successfully logged in as:", self.user)
-        
+class MyClient(discord.Client):
+   # Run code when bot is ready
+   async def on_ready(self):
+       await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name= "with you"))
+       print(f"{bot.user} is now ready to respond! ")
 
-#for messages
-    async def on_message(self, message):
-        print(message.content)
-        if message.author== self.user:      #self.user is the bot here
-            return
-        command, user_message = None, None
-        
-    
-        for text in ['/ai','/bot','/chatgpt']:
-            if message.content.startswith(text):
-                #splitting command and user message
-                command= message.content.split(' ')[0]  # [0] means it will read the first \ai as command and other remaining as user message
-                user_message= message.content.replace(text,'')
-                print(command,user_message)
-                
-                
-        if command== '/ai' or command== '/bot' or command== '/chatgpt':
-            bot_response = chatgpt_response(prompt= user_message) #prompt value is the user's message
-            await message.channel.send(f"{bot_response}")
-            
-intents = discord.Intents.all()
-intents.message_content= True
+   # Run code when bot joins a guild
+   async def on_guild_join(self,guild):
+       channel= guild.system_channel
+       if channel:
+           await channel.send(f"https://tenor.com/view/entrance-confident-im-here-woody-toy-story-gif-11881136")
 
-client= MyClient(intents=intents)   #instance of the class MyClient
-            
-            
+   # Run code when a message is sent
+   async def on_message(self,message):
+       # Ignore bot's own messages
+       if message.author== bot.user:
+           return
+
+       # Convert message content to lowercase
+       content= message.content.lower()
+
+       # Define keywords and image command keywords
+       words=["/helpme","/ask","/describe"]
+       img_cmds=["/make","/create","/generate"] 
+
+       # Check if bot is mentioned or keywords are present
+       try:
+           if (bot.user.mentioned_in(message) and content) or any(word in content for word in words):
+               print(f"{message.author.name} searched for: {content}")
+               await message.channel.send("Thinking...")
+               # Get AI response using Bll class
+               AI_Response =  Bll.openAI_response(content)
+               await message.channel.send(AI_Response)
+       except Exception as e:
+           print(f"Error: {e}")
